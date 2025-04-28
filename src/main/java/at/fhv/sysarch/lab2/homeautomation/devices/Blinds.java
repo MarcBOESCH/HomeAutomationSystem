@@ -1,2 +1,4 @@
-package at.fhv.sysarch.lab2.homeautomation.devices;public class Blinds {
+package at.fhv.sysarch.lab2.homeautomation.devices;
+
+public class Blinds {
 }
