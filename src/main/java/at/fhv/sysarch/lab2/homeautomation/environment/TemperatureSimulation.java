@@ -15,23 +15,23 @@ import java.util.Random;
 This actor simulates the environment temperature.
 He changes the temperature periodically and sends it to the TemperatureSensor.
  */
-public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulation.TemperatureCommand> {
+public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulation.TemperatureSimulationCommand> {
 
     // Interface for all messages that this actor can receive
-    public interface TemperatureCommand {}
+    public interface TemperatureSimulationCommand {}
 
     // Internal message used to trigger periodic temperature updates
-    private static class Tick implements TemperatureCommand {}
+    private static class Tick implements TemperatureSimulationCommand {}
 
     private final ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor;
     private double currentTemperature;
     private final Random random = new Random();
 
-    public static Behavior<TemperatureCommand> create(ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor, double initialTemperature) {
+    public static Behavior<TemperatureSimulationCommand> create(ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor, double initialTemperature) {
         return Behaviors.setup(context -> new TemperatureSimulation(context, initialTemperature, temperatureSensor));
     }
 
-    private TemperatureSimulation(ActorContext<TemperatureCommand> context, double initialTemperature, ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor) {
+    private TemperatureSimulation(ActorContext<TemperatureSimulationCommand> context, double initialTemperature, ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor) {
         super(context);
         this.currentTemperature = initialTemperature;
         this.temperatureSensor = temperatureSensor;
@@ -49,14 +49,14 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
 
     // Define how this actor handles incoming messages
     @Override
-    public Receive<TemperatureCommand> createReceive() {
+    public Receive<TemperatureSimulationCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(Tick.class, this::onTick)
                 .build();
     }
 
     // Gets called every time a Tick message is received
-    private Behavior<TemperatureCommand> onTick(Tick tick) {
+    private Behavior<TemperatureSimulationCommand> onTick(Tick tick) {
         // Randomly increases or decreases temperature by max 5 degrees
         double change = (random.nextDouble() * 10 - 5);
         currentTemperature += change;
