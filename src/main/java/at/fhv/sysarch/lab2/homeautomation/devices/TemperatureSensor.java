@@ -8,10 +8,16 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 
+/*
+AbstractBehavior --> makes class an Actor
+Through it, we can define what messages the Actor can receive (TemperatureSensor.TemperatureCommand)
+ */
 public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.TemperatureCommand> {
 
+    // The message the Actor can receive
     public interface TemperatureCommand {}
 
+    // Defines what can be inside a ReadTemperature command
     public static final class ReadTemperature implements TemperatureCommand {
         final Double value;
 
@@ -20,6 +26,7 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
         }
     }
 
+    // Initializes the Actor
     public static Behavior<TemperatureCommand> create(ActorRef<AirCondition.AirConditionCommand> airCondition) {
         return Behaviors.setup(context -> new TemperatureSensor(context, airCondition));
     }
@@ -33,6 +40,7 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
         getContext().getLog().info("TemperatureSensor started");
     }
 
+    // Defines how to handle receiving messages
     @Override
     public Receive<TemperatureCommand> createReceive() {
         return newReceiveBuilder()
@@ -41,6 +49,7 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
                 .build();
     }
 
+    // Defines the behavior
     private Behavior<TemperatureCommand> onReadTemperature(ReadTemperature r) {
         getContext().getLog().info("TemperatureSensor received {}", r.value);
         this.airCondition.tell(new AirCondition.EnrichedTemperature(r.value, "Celsius"));
