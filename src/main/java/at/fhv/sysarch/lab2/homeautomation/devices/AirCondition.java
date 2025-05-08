@@ -29,6 +29,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     }
 
     private final String identifier;
+    private boolean isPowered = false;
 
     public AirCondition(ActorContext<AirConditionCommand> context, String identifier) {
         super(context);
@@ -43,14 +44,36 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     @Override
     public Receive<AirConditionCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(EnrichedTemperature.class, this::onReadTemperature)
+                .onMessage(PowerAirCondition.class, this::onPowerChange)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
 
-    private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature r) {
-        getContext().getLog().info("Aircondition reading {}", r.value);
-        // TODO: process temperature
+    private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature message) {
+        getContext().getLog().info("Aircondition reading {}", message.value);
+
+        if (!isPowered) {
+            getContext().getLog().info("Temperature is {} {}, but AC is powered OFF", message.value, message.unit);
+        } else if (message.value > 25) {
+            getContext().getLog().info("Temperature is {} {}, cooling started", message.value, message.unit);
+        } else {
+            getContext().getLog().info("Temperature is {} {}, cooling stopped", message.value, message.unit);
+        }
+
+        return Behaviors.same();
+    }
+
+    private Behavior<AirConditionCommand> onPowerChange(PowerAirCondition message) {
+        this.isPowered = message.value;
+
+        getContext().getLog().info("AC power is turned {}", isPowered ? "ON" : "OFF");
+        if (isPowered) {
+            return Behaviors.receive(AirConditionCommand.class)
+                    .onMessage(PowerAirCondition.class, this::onPowerChange)
+                    .onMessage(EnrichedTemperature.class, this::onReadTemperature)
+                    .onSignal(PostStop.class, signal -> onPostStop())
+                    .build();
+        }
 
         return Behaviors.same();
     }

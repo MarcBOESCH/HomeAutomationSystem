@@ -56,6 +56,15 @@ public class UI extends AbstractBehavior<Void> {
             if(command[0].equals("t")) {
                 this.tempSensor.tell(new TemperatureSensor.ReadTemperature(Double.valueOf(command[1])));
             }
+            if (command[0].equals("ac") && command.length > 1) {
+                if (command[1].equals("on")) {
+                    this.airCondition.tell(new AirCondition.PowerAirCondition(true));
+                } else if (command[1].equals("off")) {
+                    this.airCondition.tell(new AirCondition.PowerAirCondition(false));
+                } else {
+                    System.out.println("Unknown AC command. Use 'ac on' or 'ac off'");
+                }
+            }
             // TODO: process Input
         }
         getContext().getLog().info("UI done");
