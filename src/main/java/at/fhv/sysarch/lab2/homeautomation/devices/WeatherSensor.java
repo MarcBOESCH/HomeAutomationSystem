@@ -21,13 +21,15 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
         }
     }
 
-    public static Behavior<WeatherSensor.WeatherCommand> create() {
-        return Behaviors.setup(context -> new WeatherSensor(context));
+    private final ActorRef<Blind.BlindCommand> blind;
+
+    public static Behavior<WeatherSensor.WeatherCommand> create(ActorRef<Blind.BlindCommand> blind) {
+        return Behaviors.setup(context -> new WeatherSensor(context, blind));
     }
 
-    public WeatherSensor(ActorContext<WeatherCommand> context) {
+    public WeatherSensor(ActorContext<WeatherCommand> context, ActorRef<Blind.BlindCommand> blind) {
         super(context);
-
+        this.blind = blind;
         getContext().getLog().info("WeatherSensor started");
     }
 
@@ -41,6 +43,7 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
 
     private Behavior<WeatherSensor.WeatherCommand> onReadWeather(ReadWeather message) {
         getContext().getLog().info("WeatherSensor received {}", message.condition);
+        blind.tell(new Blind.WeatherChange(message.condition));
         return this;
     }
 
