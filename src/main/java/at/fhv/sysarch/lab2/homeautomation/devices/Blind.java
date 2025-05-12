@@ -51,6 +51,7 @@ public class Blind extends AbstractBehavior<Blind.BlindCommand> {
             isClosed = false;
             getContext().getLog().info("Blinds OPENED due to {} weather", message.condition);
         }
+        // TODO: Implement logic for MediaStation
         return Behaviors.same();
     }
 
