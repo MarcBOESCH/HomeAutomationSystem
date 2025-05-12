@@ -50,7 +50,7 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
 
     private Behavior<WeatherSimulationCommand> onTick(Tick tick) {
         String newCondition = conditions.get(random.nextInt(conditions.size()));
-        weatherSensor.tell(new WeatherSensor().ReadWeather(newCondition));
+        weatherSensor.tell(new WeatherSensor.ReadWeather(newCondition));
 
         getContext().getLog().info("Simulated new weather: {}", newCondition);
         return this;

@@ -21,8 +21,7 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
         }
     }
 
-    // Initializes the Actor
-    public static Behavior<WeatherSensor.WeatherCommand> create(ActorRef<AirCondition.AirConditionCommand> airCondition) {
+    public static Behavior<WeatherSensor.WeatherCommand> create() {
         return Behaviors.setup(context -> new WeatherSensor(context));
     }
 
@@ -40,10 +39,8 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
                 .build();
     }
 
-    // Defines the behavior
     private Behavior<WeatherSensor.WeatherCommand> onReadWeather(ReadWeather message) {
-        getContext().getLog().info("TemperatureSensor received {}", message.condition);
-
+        getContext().getLog().info("WeatherSensor received {}", message.condition);
         return this;
     }
 
