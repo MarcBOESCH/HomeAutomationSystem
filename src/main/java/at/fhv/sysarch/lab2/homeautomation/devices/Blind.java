@@ -44,7 +44,13 @@ public class Blind extends AbstractBehavior<Blind.BlindCommand> {
 
     private Behavior<BlindCommand> onWeatherChange(WeatherChange message) {
         getContext().getLog().info("Blinds reading {}", message.condition);
-        // TODO: Implement logic
+        if (message.condition.equalsIgnoreCase("sunny")) {
+            isClosed = true;
+            getContext().getLog().info("Blinds CLOSED due to sunny weather");
+        } else {
+            isClosed = false;
+            getContext().getLog().info("Blinds OPENED due to {} weather", message.condition);
+        }
         return Behaviors.same();
     }
 
