@@ -77,4 +77,9 @@ public class MediaStation extends AbstractBehavior<MediaStation.MediaCommand> {
         }
         return Behaviors.same();
     }
+
+    private MediaStation onPostStop() {
+        getContext().getLog().info("MediaStation actor {}-{} stopped");
+        return this;
+    }
 }
