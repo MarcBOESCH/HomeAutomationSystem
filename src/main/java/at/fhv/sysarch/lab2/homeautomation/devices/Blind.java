@@ -32,7 +32,7 @@ public class Blind extends AbstractBehavior<Blind.BlindCommand> {
     private boolean isClosed = false;
     private boolean isMoviePlaying = false;
 
-    public Blind(ActorContext<BlindCommand> context, String identifier) {
+    private Blind(ActorContext<BlindCommand> context, String identifier) {
         super(context);
         this.identifier = identifier;
 
