@@ -19,6 +19,8 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
 
     private static class Tick implements WeatherSimulationCommand {}
 
+    public static class StopSimulation implements WeatherSimulationCommand {}
+
     private final ActorRef<WeatherSensor.WeatherCommand> weatherSensor;
     private final Random random = new Random();
     private final List<String> conditions = List.of("sunny", "cloudy", "rainy", "snowing");
@@ -45,6 +47,7 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
     public Receive<WeatherSimulationCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(Tick.class, this::onTick)
+                .onMessage(StopSimulation.class, (message) -> onPostStop())
                 .build();
     }
 
@@ -54,5 +57,10 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
 
         getContext().getLog().info("Simulated new weather: {}", newCondition);
         return this;
+    }
+
+    private Behavior<WeatherSimulationCommand> onPostStop() {
+        getContext().getLog().info("Stopping WeatherSimulation");
+        return Behaviors.stopped();
     }
 }

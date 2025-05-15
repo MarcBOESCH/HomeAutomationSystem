@@ -9,6 +9,7 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.HomeAutomationSystem;
 import at.fhv.sysarch.lab2.homeautomation.devices.*;
+import at.fhv.sysarch.lab2.homeautomation.environment.MQTTSimulationReceiver;
 import at.fhv.sysarch.lab2.homeautomation.environment.TemperatureSimulation;
 import at.fhv.sysarch.lab2.homeautomation.environment.WeatherSimulation;
 import at.fhv.sysarch.lab2.homeautomation.ui.UIHandler;

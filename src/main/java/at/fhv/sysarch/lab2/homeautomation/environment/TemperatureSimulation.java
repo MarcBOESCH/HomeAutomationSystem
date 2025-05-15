@@ -23,6 +23,8 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
     // Internal message used to trigger periodic temperature updates
     private static class Tick implements TemperatureSimulationCommand {}
 
+    public static class StopSimulation implements TemperatureSimulationCommand {}
+
     private final ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor;
     private double currentTemperature;
     private final Random random = new Random();
@@ -52,6 +54,7 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
     public Receive<TemperatureSimulationCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(Tick.class, this::onTick)
+                .onMessage(StopSimulation.class, (message) -> onPostStop())
                 .build();
     }
 
@@ -76,4 +79,8 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
         return this;
     }
 
+    private Behavior<TemperatureSimulationCommand> onPostStop() {
+        getContext().getLog().info("Stopping TemperatureSimulation");
+        return Behaviors.stopped();
+    }
 }

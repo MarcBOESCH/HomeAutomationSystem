@@ -7,6 +7,9 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.devices.*;
+import at.fhv.sysarch.lab2.homeautomation.environment.MQTTSimulationReceiver;
+import at.fhv.sysarch.lab2.homeautomation.environment.TemperatureSimulation;
+import at.fhv.sysarch.lab2.homeautomation.environment.WeatherSimulation;
 
 public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
 
@@ -19,10 +22,27 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
         }
     }
 
+    private enum WeatherSimulationMode {
+        INTERNAL,
+        MQTT
+    }
+
+    private WeatherSimulationMode weatherMode = WeatherSimulationMode.INTERNAL;
+
+    // references to simulation actors
+    private ActorRef<WeatherSimulation.WeatherSimulationCommand> weatherSim;
+    private ActorRef<TemperatureSimulation.TemperatureSimulationCommand> tempSim;
+    private ActorRef<MQTTSimulationReceiver.ReceiverCommand> mqttSimReceiver;
+
+    // active sensors and actuators
     private final ActorRef<TemperatureSensor.TemperatureCommand> tempSensor;
     private final ActorRef<WeatherSensor.WeatherCommand> weatherSensor;
     private final ActorRef<AirCondition.AirConditionCommand> airCondition;
     private final ActorRef<MediaStation.MediaCommand> mediaStation;
+
+    // context
+    private final ActorContext<UICommand> context;
+
 
 
     public static Behavior<UICommand> create(
@@ -43,6 +63,7 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             ActorRef<MediaStation.MediaCommand> mediaStation
     ) {
         super(context);
+        this.context = context;
         this.tempSensor = tempSensor;
         this.weatherSensor = weatherSensor;
         this.airCondition = airCondition;
@@ -121,6 +142,59 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
                     }
                 } else {
                     getContext().getLog().info("Usage: ms on/off/play/stop");
+                }
+                return this;
+
+            // Switch weather simulation
+            case "sim":
+                if (command.length >= 2) {
+                    String selectedMode = command[1].toLowerCase();
+
+                    switch (selectedMode) {
+                        case "mqtt":
+                            if (weatherMode == WeatherSimulationMode.MQTT) {
+                                getContext().getLog().info("Simulation already in MQTT mode (external)");
+                            } else {
+                                getContext().getLog().info("Switching to MQTT simulation");
+
+                                // stop internal simulation if active
+                                if (weatherSim != null && tempSim != null) {
+                                    weatherSim.tell(new WeatherSimulation.StopSimulation());
+                                    tempSim.tell(new TemperatureSimulation.StopSimulation());
+                                    weatherSim = null;
+                                    tempSim = null;
+                                }
+
+                                // start mqtt simulation
+                                mqttSimReceiver = context.spawn(MQTTSimulationReceiver.create(weatherSensor, tempSensor), "MQTTReceiver");
+                                weatherMode = WeatherSimulationMode.MQTT;
+                            }
+                            break;
+
+                        case "internal":
+                            if (weatherMode == WeatherSimulationMode.INTERNAL) {
+                                getContext().getLog().info("Internal simulation already active");
+                            } else {
+                                getContext().getLog().info("Switching to internal weather simulation");
+
+                                // stop mqtt simulation if running
+                                if (mqttSimReceiver != null) {
+                                    mqttSimReceiver.tell(new MQTTSimulationReceiver.StopMqttReceiver());
+                                    mqttSimReceiver = null;
+                                }
+
+                                // start internal simulation
+                                weatherSim = context.spawn(WeatherSimulation.create(weatherSensor), "WeatherSimulation");
+                                tempSim = context.spawn(TemperatureSimulation.create(tempSensor, 23), "TemperatureSimulation");
+                                weatherMode = WeatherSimulationMode.INTERNAL;
+                            }
+                            break;
+
+                        default:
+                            getContext().getLog().info("Usage: sim <mqtt/internal>");
+                    }
+                } else {
+                    getContext().getLog().info("Usage: sim <mqtt/internal");
                 }
                 return this;
 

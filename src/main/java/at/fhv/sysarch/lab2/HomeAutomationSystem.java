@@ -15,7 +15,7 @@ public class HomeAutomationSystem {
 
         new Thread(() -> {
             Scanner scanner = new Scanner(System.in);
-            System.out.println("Home Automation CLI Ready:");
+            System.err.println("Home Automation CLI Ready:");
             while (true) {
                 if (scanner.hasNextLine()) {
                     String input = scanner.nextLine();
