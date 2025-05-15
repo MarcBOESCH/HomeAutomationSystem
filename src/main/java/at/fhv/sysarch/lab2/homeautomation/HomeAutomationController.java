@@ -28,14 +28,19 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
 
     private  HomeAutomationController(ActorContext<Void> context) {
         super(context);
-        // TODO: consider guardians and hierarchies. Who should create and communicate with which Actors?
+
+        // Devices
         ActorRef<Blind.BlindCommand> blinds = getContext().spawn(Blind.create(UUID.randomUUID().toString()), "Blinds");
         ActorRef<AirCondition.AirConditionCommand> airCondition = getContext().spawn(AirCondition.create(UUID.randomUUID().toString()), "AirCondition");
         ActorRef<MediaStation.MediaCommand> mediaStation = getContext().spawn(MediaStation.create(blinds), "MediaStation");
         ActorRef<TemperatureSensor.TemperatureCommand> tempSensor = getContext().spawn(TemperatureSensor.create(airCondition), "temperatureSensor");
         ActorRef<WeatherSensor.WeatherCommand> weatherSensor = getContext().spawn(WeatherSensor.create(blinds), "weatherSensor");
+
+        // Simulation
         ActorRef<TemperatureSimulation.TemperatureSimulationCommand> temperatureSimulation = getContext().spawn(TemperatureSimulation.create(tempSensor,23.0), "TemperatureSimulation");
         ActorRef<WeatherSimulation.WeatherSimulationCommand> weatherSimulation = getContext().spawn(WeatherSimulation.create(weatherSensor), "WeatherSimulation");
+
+        // UI
         ActorRef<UIHandler.UICommand> uiHandler = getContext().spawn(UIHandler.create(tempSensor, weatherSensor, airCondition, mediaStation), "UIHandler");
         HomeAutomationSystem.setUiHandler(uiHandler);
         getContext().getLog().info("HomeAutomation Application started");
