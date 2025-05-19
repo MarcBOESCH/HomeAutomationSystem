@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_package = "at.fhv.sysarch.lab2.homeautomation.grpc";
+option java_multiple_files = true;
+
+//Is this order function everything we need?
+//maybe a function which asks for weight/prices aswell?
+service OrderService {
+  rpc order(OrderRequest) returns (OrderReply);
+}
+
+//is String product enough?
+message OrderRequest {
+  string product = 1;
+}
+
+//should we introduce prices/weight here? maybe it doesn't make sense here, as the
+//sensors on the other side check for weight there.
+message OrderReply {
+  bool successful = 1;
+}

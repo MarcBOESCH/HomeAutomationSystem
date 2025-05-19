@@ -35,6 +35,7 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
         ActorRef<MediaStation.MediaCommand> mediaStation = getContext().spawn(MediaStation.create(blinds), "MediaStation");
         ActorRef<TemperatureSensor.TemperatureCommand> tempSensor = getContext().spawn(TemperatureSensor.create(airCondition), "temperatureSensor");
         ActorRef<WeatherSensor.WeatherCommand> weatherSensor = getContext().spawn(WeatherSensor.create(blinds), "weatherSensor");
+        ActorRef<SmartFridge.FridgeCommand> fridge = getContext().spawn(SmartFridge.create(), "SmartFridge");
 
         // Simulation
         ActorRef<TemperatureSimulation.TemperatureSimulationCommand> temperatureSimulation = getContext().spawn(TemperatureSimulation.create(tempSensor,23.0), "TemperatureSimulation");
