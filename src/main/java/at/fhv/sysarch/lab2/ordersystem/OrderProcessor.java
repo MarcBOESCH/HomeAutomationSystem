@@ -12,6 +12,8 @@ import akka.actor.typed.javadsl.Receive;
 public class OrderProcessor extends AbstractBehavior<String> {
     public interface Order {}
 
+
+
     public static Behavior<String> create(){
         return  Behaviors.setup(OrderProcessor::new);
     }
@@ -24,6 +26,13 @@ public class OrderProcessor extends AbstractBehavior<String> {
     @Override
     public Receive<String> createReceive() {
         return newReceiveBuilder()
+                .onMessage(String.class, this::onOrderReceived)
                 .build();
+    }
+
+    private Behavior<String> onOrderReceived(String s){
+        getContext().getLog().info("Order received: {}", s);
+        //TODO: process order, generate return value. -> OrderReply i guess
+        return this;
     }
 }

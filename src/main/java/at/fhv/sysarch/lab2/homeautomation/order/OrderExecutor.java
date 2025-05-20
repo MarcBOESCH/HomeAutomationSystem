@@ -1,11 +1,15 @@
 package at.fhv.sysarch.lab2.homeautomation.order;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import akka.grpc.GrpcClientSettings;
+import at.fhv.sysarch.lab2.homeautomation.devices.SmartFridge;
+import at.fhv.sysarch.lab2.homeautomation.devices.SpaceSensor;
+import at.fhv.sysarch.lab2.homeautomation.devices.WeightSensor;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderServiceClient;
@@ -15,7 +19,10 @@ import java.util.concurrent.CompletionStage;
 public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> {
     public interface OrderCommand {}
     private OrderServiceClient client;
-
+    private final ActorRef<WeightSensor> weightSensor;
+    private final ActorRef<SmartFridge> fridge;
+    private final ActorRef<SpaceSensor> spaceSensor;
+    private final Product product;
     /// Messages
 
     public static final class Order implements OrderCommand{
@@ -27,22 +34,36 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
 
     //Create Sachen:
-    public static Behavior<OrderCommand> create() {
+    public static Behavior<OrderCommand> create(
+            Product product,
+            ActorRef<WeightSensor> weightSensor,
+            ActorRef<SpaceSensor> spaceSensor,
+            ActorRef<SmartFridge> fridge) {
         return Behaviors.setup(context -> {
             GrpcClientSettings settings = GrpcClientSettings
                     .connectToServiceAt("localhost", 8080, context.getSystem())
                     .withTls(false);
             OrderServiceClient client = OrderServiceClient.create(settings, context.getSystem());
-            return new OrderExecutor(context, client);
+            return new OrderExecutor(context, client, product, weightSensor, spaceSensor, fridge);
         });
 
 
     }
-    private OrderExecutor(ActorContext<OrderCommand> context, OrderServiceClient client){
+    private OrderExecutor(
+            ActorContext<OrderCommand> context,
+            OrderServiceClient client,
+            Product product,
+            ActorRef<WeightSensor> weightSensor,
+            ActorRef<SpaceSensor> spaceSensor,
+            ActorRef<SmartFridge> fridge){
         super(context);
         this.client = client;
-        //TODO: ActorRef to WeightSensor and SpaceSensor. From Fridge.
+        this.weightSensor = weightSensor;
+        this.fridge = fridge;
+        this.spaceSensor = spaceSensor;
+        this.product = product;
         getContext().getLog().info("OrderExecutor started");
+        //TODO: Send message to self to start OrderProcess.
     }
 
 
