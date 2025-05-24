@@ -42,7 +42,7 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
         ActorRef<WeatherSimulation.WeatherSimulationCommand> weatherSimulation = getContext().spawn(WeatherSimulation.create(weatherSensor), "WeatherSimulation");
 
         // UI
-        ActorRef<UIHandler.UICommand> uiHandler = getContext().spawn(UIHandler.create(tempSensor, weatherSensor, airCondition, mediaStation), "UIHandler");
+        ActorRef<UIHandler.UICommand> uiHandler = getContext().spawn(UIHandler.create(tempSensor, weatherSensor, airCondition, mediaStation, fridge), "UIHandler");
         HomeAutomationSystem.setUiHandler(uiHandler);
         getContext().getLog().info("HomeAutomation Application started");
     }

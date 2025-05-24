@@ -28,6 +28,9 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
     }
 
     private WeatherSimulationMode weatherMode = WeatherSimulationMode.INTERNAL;
+    //reference to the fridge
+    private ActorRef<SmartFridge.FridgeCommand> fridge;
+
 
     // references to simulation actors
     private ActorRef<WeatherSimulation.WeatherSimulationCommand> weatherSim;
@@ -49,10 +52,11 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
             ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
             ActorRef<AirCondition.AirConditionCommand> airCondition,
-            ActorRef<MediaStation.MediaCommand> mediaStation
+            ActorRef<MediaStation.MediaCommand> mediaStation,
+            ActorRef<SmartFridge.FridgeCommand> fridge
     ) {
         return Behaviors.setup(context ->
-                new UIHandler(context, tempSensor, weatherSensor, airCondition, mediaStation));
+                new UIHandler(context, tempSensor, weatherSensor, airCondition, mediaStation, fridge));
     }
 
     private UIHandler(
@@ -60,7 +64,8 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
             ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
             ActorRef<AirCondition.AirConditionCommand> airCondition,
-            ActorRef<MediaStation.MediaCommand> mediaStation
+            ActorRef<MediaStation.MediaCommand> mediaStation,
+            ActorRef<SmartFridge.FridgeCommand> fridge
     ) {
         super(context);
         this.context = context;
@@ -68,6 +73,7 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
         this.weatherSensor = weatherSensor;
         this.airCondition = airCondition;
         this.mediaStation = mediaStation;
+        this.fridge = fridge;
         context.getLog().info("UIHandler started");
     }
 
