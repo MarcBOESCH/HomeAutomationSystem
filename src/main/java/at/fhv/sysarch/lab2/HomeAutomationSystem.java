@@ -7,7 +7,7 @@ import at.fhv.sysarch.lab2.homeautomation.ui.UIHandler;
 import at.fhv.sysarch.lab2.homeautomation.ui.UIWindow;
 
 import javax.swing.*;
-import java.util.Scanner;
+
 
 public class HomeAutomationSystem {
 

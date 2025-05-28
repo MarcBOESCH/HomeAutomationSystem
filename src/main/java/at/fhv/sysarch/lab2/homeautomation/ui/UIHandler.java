@@ -7,7 +7,7 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.devices.*;
-import at.fhv.sysarch.lab2.homeautomation.environment.MQTTSimulationReceiver;
+import at.fhv.sysarch.lab2.homeautomation.environment.MqttBridge;
 import at.fhv.sysarch.lab2.homeautomation.environment.TemperatureSimulation;
 import at.fhv.sysarch.lab2.homeautomation.environment.WeatherSimulation;
 
@@ -32,7 +32,6 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
     // references to simulation actors
     private ActorRef<WeatherSimulation.WeatherSimulationCommand> weatherSim;
     private ActorRef<TemperatureSimulation.TemperatureSimulationCommand> tempSim;
-    private ActorRef<MQTTSimulationReceiver.ReceiverCommand> mqttSimReceiver;
 
     // active sensors and actuators
     private final ActorRef<TemperatureSensor.TemperatureCommand> tempSensor;
@@ -63,6 +62,8 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             ActorRef<MediaStation.MediaCommand> mediaStation
     ) {
         super(context);
+        this.weatherSim = context.spawn(WeatherSimulation.create(weatherSensor), "WeatherSimulation");
+        this.tempSim = context.spawn(TemperatureSimulation.create(tempSensor, 23.0), "TemperatureSimulation");
         this.context = context;
         this.tempSensor = tempSensor;
         this.weatherSensor = weatherSensor;
@@ -166,7 +167,7 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
                                 }
 
                                 // start mqtt simulation
-                                mqttSimReceiver = context.spawn(MQTTSimulationReceiver.create(weatherSensor, tempSensor), "MQTTReceiver");
+                                MqttBridge.start(weatherSensor, tempSensor);
                                 weatherMode = WeatherSimulationMode.MQTT;
                             }
                             break;
@@ -177,15 +178,12 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
                             } else {
                                 getContext().getLog().info("Switching to internal weather simulation");
 
-                                // stop mqtt simulation if running
-                                if (mqttSimReceiver != null) {
-                                    mqttSimReceiver.tell(new MQTTSimulationReceiver.StopMqttReceiver());
-                                    mqttSimReceiver = null;
-                                }
+                                // stopping MQTT simulation
+                                MqttBridge.stop();
 
                                 // start internal simulation
-                                weatherSim = context.spawn(WeatherSimulation.create(weatherSensor), "WeatherSimulation");
-                                tempSim = context.spawn(TemperatureSimulation.create(tempSensor, 23), "TemperatureSimulation");
+                                weatherSim = context.spawnAnonymous(WeatherSimulation.create(weatherSensor));
+                                tempSim = context.spawnAnonymous(TemperatureSimulation.create(tempSensor, 23.0));
                                 weatherMode = WeatherSimulationMode.INTERNAL;
                             }
                             break;

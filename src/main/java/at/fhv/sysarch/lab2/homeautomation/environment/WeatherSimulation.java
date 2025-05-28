@@ -35,7 +35,7 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
 
         context.getSystem().scheduler().scheduleAtFixedRate(
                 Duration.ofSeconds(5),
-                Duration.ofSeconds(5),
+                Duration.ofSeconds(30),
                 () -> context.getSelf().tell(new Tick()),
                 context.getSystem().executionContext()
         );
@@ -47,7 +47,7 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
     public Receive<WeatherSimulationCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(Tick.class, this::onTick)
-                .onMessage(StopSimulation.class, (message) -> onPostStop())
+                .onMessage(StopSimulation.class, this::onPostStop)
                 .build();
     }
 
@@ -59,7 +59,7 @@ public class WeatherSimulation extends AbstractBehavior<WeatherSimulation.Weathe
         return this;
     }
 
-    private Behavior<WeatherSimulationCommand> onPostStop() {
+    private Behavior<WeatherSimulationCommand> onPostStop(StopSimulation message) {
         getContext().getLog().info("Stopping WeatherSimulation");
         return Behaviors.stopped();
     }

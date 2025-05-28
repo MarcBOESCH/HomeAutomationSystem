@@ -41,7 +41,7 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
         // Schedule a Tick message to self every 5 second
         context.getSystem().scheduler().scheduleAtFixedRate(
                 Duration.ofSeconds(5),
-                Duration.ofSeconds(5),
+                Duration.ofSeconds(30),
                 () -> context.getSelf().tell(new Tick()),
                 context.getSystem().executionContext()
         );
@@ -54,7 +54,7 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
     public Receive<TemperatureSimulationCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(Tick.class, this::onTick)
-                .onMessage(StopSimulation.class, (message) -> onPostStop())
+                .onMessage(StopSimulation.class, this::onPostStop)
                 .build();
     }
 
@@ -79,7 +79,7 @@ public class TemperatureSimulation extends AbstractBehavior<TemperatureSimulatio
         return this;
     }
 
-    private Behavior<TemperatureSimulationCommand> onPostStop() {
+    private Behavior<TemperatureSimulationCommand> onPostStop(StopSimulation message) {
         getContext().getLog().info("Stopping TemperatureSimulation");
         return Behaviors.stopped();
     }
