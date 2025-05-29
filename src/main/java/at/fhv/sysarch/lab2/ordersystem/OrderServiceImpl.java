@@ -18,7 +18,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public CompletionStage<OrderReply> order(OrderRequest in) {
         //TODO: Build OrderReply in the Actor and in this Impl just ask for the OrderReply from the Actor.
-        System.out.println("Order received: " + in.getProduct());
+        System.out.println("OrderImpl: Order received: " + in.getProduct() + " " + in.getAmount());
         orderProcessor.tell(in);
 
         //TODO: always returns true; which is weird for now, so change it to the actual implementation.

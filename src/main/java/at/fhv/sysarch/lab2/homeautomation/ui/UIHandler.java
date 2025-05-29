@@ -156,14 +156,20 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             case "sf":
                 if(command.length >= 2){
                     String commandString = command[1].toLowerCase();
-                    switch (commandString){
+                    switch (commandString) {
                         case "order":
-                            if(command.length >= 4){
-                                fridge.tell(new SmartFridge.FridgeOrder(command[3].toLowerCase(), Integer.parseInt(command[4])));
+                            if (command.length >= 4) {
+                                fridge.tell(new SmartFridge.FridgeOrder(command[2].toLowerCase(), Integer.parseInt(command[3])));
+                            }else if (command.length == 3) {
+                                fridge.tell(new SmartFridge.FridgeOrder(command[2].toLowerCase(), 1));
                             }
-                    }
 
-                } //TODO: order with amount
+                    }
+                    //TODO: order with amount
+
+                }
+                return this;
+                //getContext().getLog().info("Usage: sf 'order' <productname> <amount> ");
 
 
             // Switch weather simulation
