@@ -102,7 +102,6 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     ///Behaviors
 
     private Behavior<OrderCommand> onOrder(Order order){
-        //TODO: 1. Start simple, just send a message to OrderProcessor through gRPC
         getContext().getLog().info("OrderExecutor received order for {}", order.product);
         CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(order.product)
                         .setAmount(order.amount)
@@ -113,7 +112,9 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
            if(throwable != null){
                logger.error("Error while processing order", throwable);
            } else {
-               logger.info("Order processed: {}", reply.getSuccessful());
+               logger.info("Order processed: {}, {}, {}, {}", reply.getSuccessful(), reply.getAmount(), reply.getPrice(), reply.getWeight());
+            //TODO: reply to fridge so it stocks up with the correct ish
+
            }
         });
 
