@@ -10,6 +10,7 @@ import at.fhv.sysarch.lab2.homeautomation.order.Product;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
     public interface FridgeCommand {}
@@ -92,7 +93,7 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
                 spaceSensor,
                 getContext().getSelf(),
                 message.amount),
-                "OrderExecutor" + message.product);
+                "OrderExecutor" + message.product + UUID.randomUUID().toString());
 
         return this;
     }
@@ -113,9 +114,13 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
         for(Product product : inventory){
             if (product.getName().equals(consume.product)){
                 inventory.remove(product);
+                this.spaceSensor.tell(new SpaceSensor.FreeSpace());
+                this.weightSensor.tell(new WeightSensor.DecreaseWeight((float)product.getWeight()));
                 getContext().getLog().info("{} has been consumed", product.getName());
+                getContext().getSelf().tell(new SmartFridge.CheckForAutomaticOrder(product.getName()));
                 break;
             }
+
         }
         return this;
     }

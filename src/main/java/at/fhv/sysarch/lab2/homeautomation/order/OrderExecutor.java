@@ -98,7 +98,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     private Behavior<OrderCommand> onOrder(Order order){
         getContext().getLog().info("OrderExecutor received order for {}", this.productName);
 
-        this.spaceSensor.tell(new SpaceSensor.SpaceCheck(getContext().getSelf()));
+        this.spaceSensor.tell(new SpaceSensor.SpaceCheck(this.amount, getContext().getSelf()));
 
         //TODO: 2. Check for WeightLimit
         Logger logger = getContext().getLog();
@@ -111,7 +111,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
                 this.fridge.tell(new SmartFridge.OrderUnsuccessful(throwable.toString()));
             } else {
                 logger.info("WeightCheck Successful: {}", reply.getWeight());
-                this.weightSensor.tell(new WeightSensor.WeightCheck(reply.getWeight(), getContext().getSelf()));
+                this.weightSensor.tell(new WeightSensor.WeightCheck(reply.getWeight() * this.amount, getContext().getSelf()));
             }
 
         });
@@ -125,7 +125,6 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
                 .setAmount(this.amount)
                 .build());
         Logger logger = getContext().getLog();
-        //request.thenAccept(reply -> getContext().getLog().info("Order processed {}", reply.getSuccessful()));
         request.whenComplete((reply, throwable) -> {
             if(throwable != null){
                 logger.error("Error while processing order", throwable);
@@ -133,8 +132,8 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
             } else {
                 logger.info("Order processed: {}, {}, {}, {}", reply.getSuccessful(), reply.getAmount(), reply.getPrice(), reply.getWeight());
 
-                this.spaceSensor.tell(new SpaceSensor.FillSpace());
-                this.weightSensor.tell(new WeightSensor.IncreaseWeight(weightProduct.get(productName)));
+                this.spaceSensor.tell(new SpaceSensor.FillSpace(this.amount));
+                this.weightSensor.tell(new WeightSensor.IncreaseWeight(weightProduct.get(productName) * this.amount));
                 this.fridge.tell(new SmartFridge.OrderSuccessful(reply, this.productName));
 
 

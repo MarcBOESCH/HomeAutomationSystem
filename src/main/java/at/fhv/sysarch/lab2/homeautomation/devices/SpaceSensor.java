@@ -24,13 +24,17 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
 
     public final static class SpaceCheck implements SpaceCommand{
         private final ActorRef<OrderExecutor.OrderCommand> replyTo;
-
-        public SpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
+        private final int amount;
+        public SpaceCheck(int amount, ActorRef<OrderExecutor.OrderCommand> replyTo){
             this.replyTo = replyTo;
+            this.amount = amount;
         }
     }
     public final static class FillSpace implements SpaceCommand{
-        public FillSpace(){}
+        private final int amount;
+        public FillSpace(int amount){
+            this.amount = amount;
+        }
     }
     public final static class FreeSpace implements SpaceCommand{
         public FreeSpace(){}
@@ -38,7 +42,7 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
 
     private Behavior<SpaceCommand> onSpaceCheck(SpaceCheck msg){
         boolean hasSpace = false;
-        if(occupiedSpace < maximumSpace){
+        if(occupiedSpace + msg.amount < maximumSpace){
             hasSpace = true;
         }
         getContext().getLog().info("SpaceSensor Reply: " +  hasSpace);
@@ -46,7 +50,7 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
         return this;
     }
     private Behavior<SpaceCommand> onFillSpace(FillSpace msg){
-        this.occupiedSpace++;
+        this.occupiedSpace += msg.amount;
         getContext().getLog().info("Current occupied space after stocking up: {}", this.occupiedSpace);
         return this;
     }

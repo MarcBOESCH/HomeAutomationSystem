@@ -78,6 +78,7 @@ public class WeightSensor extends AbstractBehavior<WeightSensor.WeightCommand> {
         return newReceiveBuilder()
                 .onMessage(WeightCheck.class, this::onWeightCheck)
                 .onMessage(IncreaseWeight.class, this::onIncreaseWeight)
+                .onMessage(DecreaseWeight.class, this::onDecreaseWeight)
                 .build();
     }
 
