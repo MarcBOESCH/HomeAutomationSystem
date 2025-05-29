@@ -24,21 +24,10 @@ public class OrderHandler extends AbstractBehavior<Void> {
         super(context);
 
         ActorRef<OrderProcessor.ProcessOrderCommand> orderProcessor = getContext().spawn(OrderProcessor.create(), "OrderProcessor");
-        ActorRef<WeightCheckProcessor.WeightCommand> weightProcessor = getContext().spawn(WeightCheckProcessor.create(orderProcessor), "WeightCheckProcessor");
-
         OrderServiceImpl orderService = new OrderServiceImpl(orderProcessor, getContext().getSystem());
-        WeightCheckServiceImpl weightCheckServiceImpl = new WeightCheckServiceImpl(weightProcessor, getContext().getSystem());
-
         CompletionStage<ServerBinding> binding = Http.get(getContext().getSystem())
                         .newServerAt("localhost",8080)
-                        .bind(
-                                ServiceHandler.concatOrNotFound(
-                                        OrderServiceHandlerFactory.create(orderService, getContext().getSystem()),
-                                        weightCheckServiceHandlerFactory.create(weightCheckServiceImpl,getContext().getSystem()),
-                                        ServerReflection.create(java.util.List.of(
-                                                OrderService.description,
-                                                weightCheckService.description
-                                        ), getContext().getSystem())));
+                        .bind(OrderServiceHandlerFactory.create(orderService, getContext().getSystem()));
 
         getContext().getLog().info("OrderHandler started");
         binding.thenAccept(serverBinding -> {getContext().getLog().info("Server online at http://localhost:8080/");});

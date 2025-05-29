@@ -7,6 +7,7 @@ import akka.util.Timeout;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderService;
+import at.fhv.sysarch.lab2.homeautomation.grpc.ProductWeightReply;
 
 import javax.annotation.processing.Completion;
 import java.time.Duration;
@@ -26,7 +27,6 @@ public class OrderServiceImpl implements OrderService {
     //Implementation of when an Order is Reveiced -> tell orderProcessor to do smth.
     @Override
     public CompletionStage<OrderReply> order(OrderRequest in) {
-        //TODO: Build OrderReply in the Actor and in this Impl just ask for the OrderReply from the Actor.
         System.out.println("OrderImpl: Order received: " + in.getProduct() + " " + in.getAmount());
 
         Timeout timeout = Timeout.create(Duration.ofSeconds(3));
@@ -38,5 +38,18 @@ public class OrderServiceImpl implements OrderService {
                 system.scheduler()
 
         );
+
     }
+
+    @Override
+    public CompletionStage<ProductWeightReply> checkWeight(OrderRequest in) {
+        return AskPattern.ask(
+                orderProcessor,
+                replyTo -> new OrderProcessor.CheckForWeight(in.getProduct(), replyTo),
+                Duration.ofSeconds(3),
+                system.scheduler()
+        );
+    }
+
+
 }

@@ -10,6 +10,7 @@ import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
 import at.fhv.sysarch.lab2.homeautomation.grpc.ProductWeightReply;
+import at.fhv.sysarch.lab2.homeautomation.grpc.ProductWeightReplyOrBuilder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,12 +46,12 @@ public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrder
 
     public static class CheckForWeight implements ProcessOrderCommand{
         private final String productName;
-        private final ActorRef<WeightCheckProcessor.WeightCommand> replyTo;
-        private final ActorRef<ProductWeightReply> originalSender;
-        public CheckForWeight(String productName, ActorRef<WeightCheckProcessor.WeightCommand> replyTo, ActorRef<ProductWeightReply> originalSender){
+        private final ActorRef<ProductWeightReply> replyTo;
+        //private final ActorRef<ProductWeightReply> originalSender;
+        public CheckForWeight(String productName, ActorRef<ProductWeightReply> replyTo){
             this.productName = productName;
             this.replyTo = replyTo;
-            this.originalSender = originalSender;
+            //this.originalSender = originalSender;
         }
     }
 
@@ -67,6 +68,7 @@ public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrder
     public Receive<ProcessOrderCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(ProcessOrder.class, this::onOrderReceived)
+                .onMessage(CheckForWeight.class, this::onCheckForWeight)
                 .build();
     }
 
@@ -99,7 +101,12 @@ public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrder
             weight = ThreadLocalRandom.current().nextFloat(minimum, maximum);
             productList.put(msg.productName.toLowerCase(), weight);
         }
-        msg.replyTo.tell(new WeightCheckProcessor.WeightResult(weight, msg.productName, msg.originalSender));
+        ProductWeightReply result = ProductWeightReply.newBuilder()
+                        .setSuccessful(true)
+                        .setWeight(weight)
+                        .build();
+        msg.replyTo.tell(result);
+        getContext().getLog().info("WEight check complete");
 
         return this;
     }

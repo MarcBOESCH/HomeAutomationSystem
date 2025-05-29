@@ -2,7 +2,6 @@ package at.fhv.sysarch.lab2.homeautomation.order;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
-import akka.actor.typed.PostStop;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -11,9 +10,7 @@ import akka.grpc.GrpcClientSettings;
 import at.fhv.sysarch.lab2.homeautomation.devices.SmartFridge;
 import at.fhv.sysarch.lab2.homeautomation.devices.SpaceSensor;
 import at.fhv.sysarch.lab2.homeautomation.devices.WeightSensor;
-import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
-import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
-import at.fhv.sysarch.lab2.homeautomation.grpc.OrderServiceClient;
+import at.fhv.sysarch.lab2.homeautomation.grpc.*;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -31,7 +28,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     //Uninitialized HashMap to use as checks, whether space/weight is good or not.
     private final HashMap<String, Boolean> spaceProduct = new HashMap<>();
-    private final HashMap<String, Boolean> weightProduct = new HashMap<>();
+    private final HashMap<String, Float> weightProduct = new HashMap<>();
 
     /// Messages
 
@@ -51,8 +48,10 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     public static final class WeightSensorAnswer implements OrderCommand{
         private final Boolean weightAnswer;
-        public WeightSensorAnswer(Boolean weightAnswer) {
+        private final Float weight;
+        public WeightSensorAnswer(Boolean weightAnswer, float weight) {
             this.weightAnswer = weightAnswer;
+            this.weight = weight;
         }
     }
 
@@ -98,8 +97,24 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     private Behavior<OrderCommand> onOrder(Order order){
         getContext().getLog().info("OrderExecutor received order for {}", this.productName);
-        //TODO: 2. Check for WeightLimit
+
         this.spaceSensor.tell(new SpaceSensor.SpaceCheck(getContext().getSelf()));
+
+        //TODO: 2. Check for WeightLimit
+        Logger logger = getContext().getLog();
+        CompletionStage<ProductWeightReply> weightRequest = this.client.checkWeight(OrderRequest.newBuilder().setProduct(this.productName)
+                .setAmount(this.amount)
+                .build());
+        weightRequest.whenComplete((reply, throwable) -> {
+            if(throwable != null){
+                logger.error("Error while checking for Weight", throwable);
+                this.fridge.tell(new SmartFridge.OrderUnsuccessful(throwable.toString()));
+            } else {
+                logger.info("WeightCheck Successful: {}", reply.getWeight());
+                this.weightSensor.tell(new WeightSensor.WeightCheck(reply.getWeight(), getContext().getSelf()));
+            }
+
+        });
 
         return this;
     }
@@ -117,8 +132,11 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
                 this.fridge.tell(new SmartFridge.OrderUnsuccessful(throwable.toString()));
             } else {
                 logger.info("Order processed: {}, {}, {}, {}", reply.getSuccessful(), reply.getAmount(), reply.getPrice(), reply.getWeight());
-                //TODO: reply to fridge so it stocks up with the correct ish
+
+                this.spaceSensor.tell(new SpaceSensor.FillSpace());
+                this.weightSensor.tell(new WeightSensor.IncreaseWeight(weightProduct.get(productName)));
                 this.fridge.tell(new SmartFridge.OrderSuccessful(reply, this.productName));
+
 
             }
         });
@@ -128,17 +146,17 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     //Check whether or not WeightCheck and SpaceCheck have answered. maybe return Behaviors still, so Behaviors.stopped(); can be used
     private Behavior<OrderCommand> checkForSensorAnswers(){
-        if(!spaceProduct.isEmpty() /*&& !weightProduct.isEmpty()*/){
+        if(!spaceProduct.isEmpty() && !weightProduct.isEmpty()){
             if(spaceProduct.get(productName) == false){
                 getContext().getLog().info("Not enough space in fridge");
 
                 return Behaviors.stopped();
             }
-//            else if(weightProduct.get(productName) == false){
-//                getContext().getLog().info("Too much weight in fridge");
-//
-//                return Behaviors.stopped();
-//            }
+            else if(weightProduct.get(productName) < 0F){
+                getContext().getLog().info("Too much weight in fridge");
+
+                return Behaviors.stopped();
+            }
             else {
 
                 return onOrderExecution();
@@ -154,7 +172,8 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     }
 
     private Behavior<OrderCommand> onWeightAnswer(WeightSensorAnswer answer){
-        this.weightProduct.put(productName, answer.weightAnswer);
+        Float savedFloat = answer.weightAnswer ? answer.weight : -1F;
+        this.weightProduct.put(productName, savedFloat);
 
         return checkForSensorAnswers();
     }

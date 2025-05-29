@@ -10,7 +10,7 @@ import at.fhv.sysarch.lab2.homeautomation.order.OrderExecutor;
 
 public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
     public interface SpaceCommand {}
-    private int maximumSpace = 15;
+    private final int maximumSpace = 15;
     private int occupiedSpace = 0;
 
 
@@ -29,6 +29,12 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
             this.replyTo = replyTo;
         }
     }
+    public final static class FillSpace implements SpaceCommand{
+        public FillSpace(){}
+    }
+    public final static class FreeSpace implements SpaceCommand{
+        public FreeSpace(){}
+    }
 
     private Behavior<SpaceCommand> onSpaceCheck(SpaceCheck msg){
         boolean hasSpace = false;
@@ -39,12 +45,25 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
         msg.replyTo.tell(new OrderExecutor.SpaceSensorAnswer(hasSpace));
         return this;
     }
+    private Behavior<SpaceCommand> onFillSpace(FillSpace msg){
+        this.occupiedSpace++;
+        getContext().getLog().info("Current occupied space after stocking up: {}", this.occupiedSpace);
+        return this;
+    }
+
+    private Behavior<SpaceCommand> onFreeSpace(FreeSpace msg){
+        this.occupiedSpace--;
+        getContext().getLog().info("Current occupied space after consumption: {}", this.occupiedSpace);
+        return this;
+    }
 
 
     @Override
     public Receive<SpaceCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(SpaceCheck.class, this::onSpaceCheck)
+                .onMessage(FillSpace.class, this::onFillSpace)
+                .onMessage(FreeSpace.class, this::onFreeSpace)
                 .build();
     }
 }
