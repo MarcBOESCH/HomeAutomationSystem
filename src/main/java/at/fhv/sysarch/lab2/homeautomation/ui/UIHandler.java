@@ -152,24 +152,56 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
                 return this;
 
             //Fridge Commands
-            //TODO: Implement the UI commands for Fridge
             case "sf":
                 if(command.length >= 2){
                     String commandString = command[1].toLowerCase();
                     switch (commandString) {
                         case "order":
-                            if (command.length >= 4) {
+                            if (command.length == 4) {
                                 fridge.tell(new SmartFridge.FridgeOrder(command[2].toLowerCase(), Integer.parseInt(command[3])));
                             }else if (command.length == 3) {
                                 fridge.tell(new SmartFridge.FridgeOrder(command[2].toLowerCase(), 1));
+                            }else{
+                                getContext().getLog().info("Usage: sf order <productName> <Amount as number to order (or empty for 1)>");
                             }
 
+                        case "auto":
+                            if(command.length == 3) {
+                                fridge.tell(new SmartFridge.SetAutomaticOrder(command[2].toLowerCase(), 1));
+                            } else if(command.length == 4) {
+                                fridge.tell(new SmartFridge.SetAutomaticOrder(command[2].toLowerCase(), Integer.parseInt(command[3])));
+                            }
+                            else{
+                                getContext().getLog().info("Usage: sf auto <productName> <Amount as number to order (or empty for 1)>");
+                            }
+                        case "eat":
+                            if(command.length == 3) {
+                                fridge.tell(new SmartFridge.Consume(command[2]));
+                            }else {
+                                getContext().getLog().info("Usage: sf eat <productName>");
+                            }
+                        case "look":
+                            if(command.length == 2) {
+                                fridge.tell(new SmartFridge.QueryFridgeContent());
+                            }
+                            else {
+                                getContext().getLog().info("Usage: sf look");
+                            }
+                        case "history":
+                            if(command.length == 2) {
+                                fridge.tell(new SmartFridge.QueryOrderHistory());
+
+                            }
+                            else {
+                                getContext().getLog().info("Usage: sf history");
+                            }
+
+
                     }
-                    //TODO: order with amount
+
 
                 }
                 return this;
-                //getContext().getLog().info("Usage: sf 'order' <productname> <amount> ");
 
 
             // Switch weather simulation
