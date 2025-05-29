@@ -28,6 +28,9 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
     }
 
     private WeatherSimulationMode weatherMode = WeatherSimulationMode.INTERNAL;
+    //reference to the fridge
+    private ActorRef<SmartFridge.FridgeCommand> fridge;
+
 
     // references to simulation actors
     private ActorRef<WeatherSimulation.WeatherSimulationCommand> weatherSim;
@@ -48,10 +51,11 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
             ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
             ActorRef<AirCondition.AirConditionCommand> airCondition,
-            ActorRef<MediaStation.MediaCommand> mediaStation
+            ActorRef<MediaStation.MediaCommand> mediaStation,
+            ActorRef<SmartFridge.FridgeCommand> fridge
     ) {
         return Behaviors.setup(context ->
-                new UIHandler(context, tempSensor, weatherSensor, airCondition, mediaStation));
+                new UIHandler(context, tempSensor, weatherSensor, airCondition, mediaStation, fridge));
     }
 
     private UIHandler(
@@ -59,7 +63,8 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
             ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
             ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
             ActorRef<AirCondition.AirConditionCommand> airCondition,
-            ActorRef<MediaStation.MediaCommand> mediaStation
+            ActorRef<MediaStation.MediaCommand> mediaStation,
+            ActorRef<SmartFridge.FridgeCommand> fridge
     ) {
         super(context);
         this.weatherSim = context.spawn(WeatherSimulation.create(weatherSensor), "WeatherSimulation");
@@ -69,6 +74,7 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
         this.weatherSensor = weatherSensor;
         this.airCondition = airCondition;
         this.mediaStation = mediaStation;
+        this.fridge = fridge;
         context.getLog().info("UIHandler started");
     }
 
@@ -145,6 +151,59 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
                     getContext().getLog().info("Usage: ms on/off/play/stop");
                 }
                 return this;
+
+            //Fridge Commands
+            case "sf":
+                if(command.length >= 2){
+                    String commandString = command[1].toLowerCase();
+                    switch (commandString) {
+                        case "order":
+                            if (command.length == 4) {
+                                fridge.tell(new SmartFridge.FridgeOrder(command[2].toLowerCase(), Integer.parseInt(command[3])));
+                            }else if (command.length == 3) {
+                                fridge.tell(new SmartFridge.FridgeOrder(command[2].toLowerCase(), 1));
+                            }else{
+                                getContext().getLog().info("Usage: sf order <productName> <Amount as number to order (or empty for 1)>");
+                            }
+
+                        case "auto":
+                            if(command.length == 3) {
+                                fridge.tell(new SmartFridge.SetAutomaticOrder(command[2].toLowerCase(), 1));
+                            } else if(command.length == 4) {
+                                fridge.tell(new SmartFridge.SetAutomaticOrder(command[2].toLowerCase(), Integer.parseInt(command[3])));
+                            }
+                            else{
+                                getContext().getLog().info("Usage: sf auto <productName> <Amount as number to order (or empty for 1)>");
+                            }
+                        case "eat":
+                            if(command.length == 3) {
+                                fridge.tell(new SmartFridge.Consume(command[2]));
+                            }else {
+                                getContext().getLog().info("Usage: sf eat <productName>");
+                            }
+                        case "look":
+                            if(command.length == 2) {
+                                fridge.tell(new SmartFridge.QueryFridgeContent());
+                            }
+                            else {
+                                getContext().getLog().info("Usage: sf look");
+                            }
+                        case "history":
+                            if(command.length == 2) {
+                                fridge.tell(new SmartFridge.QueryOrderHistory());
+
+                            }
+                            else {
+                                getContext().getLog().info("Usage: sf history");
+                            }
+
+
+                    }
+
+
+                }
+                return this;
+
 
             // Switch weather simulation
             case "sim":
