@@ -9,6 +9,7 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
+import at.fhv.sysarch.lab2.homeautomation.grpc.ProductWeightReply;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,8 +21,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrderCommand> {
     public interface ProcessOrderCommand{}
-
-    public interface Order {}
     public interface Reply{}
     private static final HashMap<String, Float> productList = new HashMap<>();
     private static final HashMap<String, Float> priceList = new HashMap<>();
@@ -41,6 +40,17 @@ public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrder
         private final OrderReply reply;
         public ProcessOrderReply(OrderReply reply){
             this.reply = reply;
+        }
+    }
+
+    public static class CheckForWeight implements ProcessOrderCommand{
+        private final String productName;
+        private final ActorRef<WeightCheckProcessor.WeightCommand> replyTo;
+        private final ActorRef<ProductWeightReply> originalSender;
+        public CheckForWeight(String productName, ActorRef<WeightCheckProcessor.WeightCommand> replyTo, ActorRef<ProductWeightReply> originalSender){
+            this.productName = productName;
+            this.replyTo = replyTo;
+            this.originalSender = originalSender;
         }
     }
 
@@ -75,6 +85,22 @@ public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrder
                 .setPrice(priceList.get(request.order.getProduct()))
                 .build();
         request.replyTo.tell(result);
+        return this;
+    }
+
+    private Behavior<ProcessOrderCommand> onCheckForWeight(CheckForWeight msg){
+        float weight = -1f;
+        if(!productList.isEmpty()){
+            if(productList.containsKey(msg.productName.toLowerCase())){
+                weight = productList.get(msg.productName.toLowerCase());
+            }
+        }
+        if(weight == -1f){
+            weight = ThreadLocalRandom.current().nextFloat(minimum, maximum);
+            productList.put(msg.productName.toLowerCase(), weight);
+        }
+        msg.replyTo.tell(new WeightCheckProcessor.WeightResult(weight, msg.productName, msg.originalSender));
+
         return this;
     }
 }

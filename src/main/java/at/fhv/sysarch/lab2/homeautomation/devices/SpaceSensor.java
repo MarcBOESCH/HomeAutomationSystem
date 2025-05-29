@@ -23,7 +23,7 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
     }
 
     public final static class SpaceCheck implements SpaceCommand{
-        private ActorRef<OrderExecutor.OrderCommand> replyTo;
+        private final ActorRef<OrderExecutor.OrderCommand> replyTo;
 
         public SpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
             this.replyTo = replyTo;
@@ -35,6 +35,7 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
         if(occupiedSpace < maximumSpace){
             hasSpace = true;
         }
+        getContext().getLog().info("SpaceSensor Reply: " +  hasSpace);
         msg.replyTo.tell(new OrderExecutor.SpaceSensorAnswer(hasSpace));
         return this;
     }

@@ -56,9 +56,6 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
         }
     }
 
-    public static final class OrderExecution implements OrderCommand{
-        public OrderExecution(){};
-    }
 
     //Create Sachen:
     public static Behavior<OrderCommand> create(
@@ -101,13 +98,13 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     private Behavior<OrderCommand> onOrder(Order order){
         getContext().getLog().info("OrderExecutor received order for {}", this.productName);
-        //TODO: 2. Check for WeightLimit, SpaceLimit through the ActorRefs before ordering -> trigger this from create directly
+        //TODO: 2. Check for WeightLimit
         this.spaceSensor.tell(new SpaceSensor.SpaceCheck(getContext().getSelf()));
 
         return this;
     }
 
-    private Behavior<OrderCommand> onOrderExecution(OrderExecution orderExecution){
+    private Behavior<OrderCommand> onOrderExecution(){
         getContext().getLog().info("OrderExecution started for order {}", this.productName);
         CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(this.productName)
                 .setAmount(this.amount)
@@ -131,20 +128,20 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     //Check whether or not WeightCheck and SpaceCheck have answered. maybe return Behaviors still, so Behaviors.stopped(); can be used
     private Behavior<OrderCommand> checkForSensorAnswers(){
-        if(!spaceProduct.isEmpty() && !weightProduct.isEmpty()){
+        if(!spaceProduct.isEmpty() /*&& !weightProduct.isEmpty()*/){
             if(spaceProduct.get(productName) == false){
                 getContext().getLog().info("Not enough space in fridge");
 
                 return Behaviors.stopped();
             }
-            else if(weightProduct.get(productName) == false){
-                getContext().getLog().info("Too much weight in fridge");
-
-                return Behaviors.stopped();
-            }
+//            else if(weightProduct.get(productName) == false){
+//                getContext().getLog().info("Too much weight in fridge");
+//
+//                return Behaviors.stopped();
+//            }
             else {
-                //TODO: Order that ish through gRPC. remove the return this.
-                return this;
+
+                return onOrderExecution();
             }
         }
         return this;
@@ -152,7 +149,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     private Behavior<OrderCommand> onSpaceAnswer(SpaceSensorAnswer answer){
         this.spaceProduct.put(productName, answer.spaceAnswer);
-
+        getContext().getLog().info("SpaceProduct: " + this.spaceProduct.get(productName));
         return checkForSensorAnswers();
     }
 
