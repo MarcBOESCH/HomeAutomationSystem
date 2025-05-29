@@ -12,10 +12,14 @@ service OrderService {
 //is String product enough?
 message OrderRequest {
   string product = 1;
+  int32 amount = 2;
 }
 
 //should we introduce prices/weight here? maybe it doesn't make sense here, as the
 //sensors on the other side check for weight there.
 message OrderReply {
   bool successful = 1;
+  float weight = 2;
+  float price = 3;
+  int32 amount = 4;
 }

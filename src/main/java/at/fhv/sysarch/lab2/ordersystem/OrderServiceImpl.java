@@ -8,18 +8,18 @@ import at.fhv.sysarch.lab2.homeautomation.grpc.OrderService;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-//could this be a singleton class for single entrypoint?
 public class OrderServiceImpl implements OrderService {
 
-    ActorRef<String> orderProcessor;
+    ActorRef<OrderRequest> orderProcessor;
 
-    public OrderServiceImpl(ActorRef<String> orderProcessor) {this.orderProcessor = orderProcessor;}
+    public OrderServiceImpl(ActorRef<OrderRequest> orderProcessor) {this.orderProcessor = orderProcessor;}
 
     //Implementation of when an Order is Reveiced -> tell orderProcessor to do smth.
     @Override
     public CompletionStage<OrderReply> order(OrderRequest in) {
+        //TODO: Build OrderReply in the Actor and in this Impl just ask for the OrderReply from the Actor.
         System.out.println("Order received: " + in.getProduct());
-        orderProcessor.tell(in.getProduct()); //maybe change to ask, if possible from non actor to actor.
+        orderProcessor.tell(in);
 
         //TODO: always returns true; which is weird for now, so change it to the actual implementation.
         return CompletableFuture.completedFuture(OrderReply.newBuilder().setSuccessful(true).build());

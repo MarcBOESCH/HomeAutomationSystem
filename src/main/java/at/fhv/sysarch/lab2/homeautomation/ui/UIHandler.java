@@ -151,6 +151,10 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
                 }
                 return this;
 
+            //Fridge Commands
+            //TODO: Implement the UI commands for Fridge
+
+
             // Switch weather simulation
             case "sim":
                 if (command.length >= 2) {

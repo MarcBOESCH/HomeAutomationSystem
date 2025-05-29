@@ -1,10 +1,12 @@
 package at.fhv.sysarch.lab2.homeautomation.devices;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.order.OrderExecutor;
 
 public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
     public interface SpaceCommand {}
@@ -18,6 +20,22 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
     private SpaceSensor(ActorContext<SpaceCommand> context){
         super(context);
         getContext().getLog().info("SpaceSensor started");
+    }
+
+    private final static class SpaceCheck{
+        private ActorRef<OrderExecutor.OrderCommand> replyTo;
+
+        public SpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
+            this.replyTo = replyTo;
+        }
+    }
+
+    private Behavior<SpaceCommand> onSpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
+        if(occupiedSpace < maximumSpace){
+            replyTo.tell();
+        }
+
+        return this;
     }
 
 

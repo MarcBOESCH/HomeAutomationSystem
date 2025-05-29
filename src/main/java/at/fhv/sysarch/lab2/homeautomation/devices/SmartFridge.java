@@ -2,10 +2,7 @@ package at.fhv.sysarch.lab2.homeautomation.devices;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
-import akka.actor.typed.javadsl.AbstractBehavior;
-import akka.actor.typed.javadsl.ActorContext;
-import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.Receive;
+import akka.actor.typed.javadsl.*;
 import at.fhv.sysarch.lab2.homeautomation.order.OrderExecutor;
 import at.fhv.sysarch.lab2.homeautomation.order.Product;
 
@@ -22,9 +19,11 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
     /// Messages:
 
     public static final class FridgeOrder implements FridgeCommand {
-        public final Product product;
-        public FridgeOrder(Product product) {
+        private final Product product;
+        private final int amount;
+        public FridgeOrder(Product product, int amount) {
             this.product = product;
+            this.amount = amount;
         }
     }
 
@@ -33,7 +32,6 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
     private SmartFridge(ActorContext<FridgeCommand> context){
         super(context);
         getContext().getLog().info("SmartFridge started");
-        //TODO: Spawn WeightSensor and SpaceSensor.
         this.weightSensor = getContext().spawn(WeightSensor.create(), "WeightSensor");
         this.spaceSensor = getContext().spawn(SpaceSensor.create(), "SpaceSensor");
     }
@@ -41,12 +39,21 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
     /// Behaviors:
 
     private Behavior<FridgeCommand> onFridgeOrder(FridgeOrder message){
-        ActorRef<OrderExecutor.OrderCommand> orderExecutor = getContext().spawn(OrderExecutor.create(), "OrderExecutor" + message.product.getName());
+        ActorRef<OrderExecutor.OrderCommand> orderExecutor = getContext().spawn(OrderExecutor.create(message.product,
+                 weightSensor,
+                spaceSensor,
+                getContext().getSelf(),
+                message.amount),
+                "OrderExecutor" + message.product.getName());
+
         return this;
     }
 
     @Override
     public Receive<FridgeCommand> createReceive() {
-        return null;
+        return newReceiveBuilder()
+                .onMessage(FridgeOrder.class, this::onFridgeOrder)
+                .build();
+
     }
 }

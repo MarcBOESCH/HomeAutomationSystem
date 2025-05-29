@@ -6,6 +6,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
 
 public class OrderHandler extends AbstractBehavior<Void> {
 
@@ -16,9 +17,9 @@ public class OrderHandler extends AbstractBehavior<Void> {
     private OrderHandler(ActorContext<Void> context){
         super(context);
 
-        ActorRef<String> orderProcessor = getContext().spawn(OrderProcessor.create(), "OrderProcessor");
+        ActorRef<OrderRequest> orderProcessor = getContext().spawn(OrderProcessor.create(), "OrderProcessor");
 
-        //OrderServiceImpl orderService = new OrderServiceImpl(orderProcessor);
+        OrderServiceImpl orderService = new OrderServiceImpl(orderProcessor);
 
         getContext().getLog().info("OrderHandler started");
     }
