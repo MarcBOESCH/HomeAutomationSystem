@@ -14,12 +14,14 @@ import at.fhv.sysarch.lab2.homeautomation.devices.WeightSensor;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderServiceClient;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.concurrent.CompletionStage;
 
 public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> {
     public interface OrderCommand {}
+
     private OrderServiceClient client;
     private final int amount;
     private final ActorRef<WeightSensor.WeightCommand> weightSensor;
@@ -93,7 +95,6 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
         this.productName = product;
         this.amount = amount;
         getContext().getLog().info("OrderExecutor started");
-        //TODO: Send message to self to start OrderProcess.
         getContext().getSelf().tell(new Order(product, amount));
     }
 
@@ -106,7 +107,15 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
         CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(order.product)
                         .setAmount(order.amount)
                         .build());
-        request.thenAccept(reply -> getContext().getLog().info("Order processed {}", reply.getSuccessful()));
+        Logger logger = getContext().getLog();
+        //request.thenAccept(reply -> getContext().getLog().info("Order processed {}", reply.getSuccessful()));
+        request.whenComplete((reply, throwable) -> {
+           if(throwable != null){
+               logger.error("Error while processing order", throwable);
+           } else {
+               logger.info("Order processed: {}", reply.getSuccessful());
+           }
+        });
 
         //TODO: 2. Check for WeightLimit, SpaceLimit through the ActorRefs before ordering -> trigger this from create directly
 

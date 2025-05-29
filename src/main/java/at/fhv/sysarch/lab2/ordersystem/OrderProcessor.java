@@ -1,11 +1,13 @@
 /// Handles the incoming order requests over gRPC
 package at.fhv.sysarch.lab2.ordersystem;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.grpc.OrderReply;
 import at.fhv.sysarch.lab2.homeautomation.grpc.OrderRequest;
 
 import java.util.ArrayList;
@@ -16,38 +18,63 @@ import java.util.concurrent.ThreadLocalRandom;
 
 //Vorerst <String>, später nochmal schauen ob eine andere Typisierung mehr Sinn macht.
 
-public class OrderProcessor extends AbstractBehavior<OrderRequest> {
+public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrderCommand> {
+    public interface ProcessOrderCommand{}
+
     public interface Order {}
+    public interface Reply{}
     private static final HashMap<String, Float> productList = new HashMap<>();
     private static final HashMap<String, Float> priceList = new HashMap<>();
     private final float minimum = 0.5f;
     private final float maximum = 5.0f;
 
+    public static final class ProcessOrder implements ProcessOrderCommand {
+        private final OrderRequest order;
+        private final ActorRef<OrderReply> replyTo;
+        public ProcessOrder(OrderRequest order, ActorRef<OrderReply> replyTo){
+            this.order = order;
+            this.replyTo = replyTo;
+        }
+    }
 
-    public static Behavior<OrderRequest> create(){
+    public static class ProcessOrderReply implements Reply {
+        private final OrderReply reply;
+        public ProcessOrderReply(OrderReply reply){
+            this.reply = reply;
+        }
+    }
+
+    public static Behavior<ProcessOrderCommand> create(){
         return  Behaviors.setup(OrderProcessor::new);
     }
 
-    private OrderProcessor(ActorContext<OrderRequest> context){
+    private OrderProcessor(ActorContext<ProcessOrderCommand> context){
         super(context);
         getContext().getLog().info("OrderProcessor started");
     }
 
     @Override
-    public Receive<OrderRequest> createReceive() {
+    public Receive<ProcessOrderCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(OrderRequest.class, this::onOrderReceived)
+                .onMessage(ProcessOrder.class, this::onOrderReceived)
                 .build();
     }
 
-    private Behavior<OrderRequest> onOrderReceived(OrderRequest request){
-        if(!productList.containsKey(request.getProduct().toLowerCase())){
-            productList.put(request.getProduct().toLowerCase(), ThreadLocalRandom.current().nextFloat(minimum, maximum));
-            priceList.put(request.getProduct().toLowerCase(), ThreadLocalRandom.current().nextFloat(minimum, maximum-2.0f));
+    private Behavior<ProcessOrderCommand> onOrderReceived(ProcessOrder request){
+        if(!productList.containsKey(request.order.getProduct().toLowerCase())){
+            productList.put(request.order.getProduct().toLowerCase(), ThreadLocalRandom.current().nextFloat(minimum, maximum));
+            priceList.put(request.order.getProduct().toLowerCase(), ThreadLocalRandom.current().nextFloat(minimum, maximum-2.0f));
         }
 
-        getContext().getLog().info("Order received: {}", request.getProduct());
+        getContext().getLog().info("Order received: {}", request.order.getProduct());
         //TODO: process order, generate return value. -> OrderReply i guess
+        OrderReply result = OrderReply.newBuilder()
+                .setSuccessful(true)
+                .setWeight(productList.get(request.order.getProduct()))
+                .setAmount(request.order.getAmount())
+                .setPrice(priceList.get(request.order.getProduct()))
+                .build();
+        request.replyTo.tell(result);
         return this;
     }
 }

@@ -22,14 +22,15 @@ public class OrderHandler extends AbstractBehavior<Void> {
     private OrderHandler(ActorContext<Void> context){
         super(context);
 
-        ActorRef<OrderRequest> orderProcessor = getContext().spawn(OrderProcessor.create(), "OrderProcessor");
+        ActorRef<OrderProcessor.ProcessOrderCommand> orderProcessor = getContext().spawn(OrderProcessor.create(), "OrderProcessor");
 
-        OrderServiceImpl orderService = new OrderServiceImpl(orderProcessor);
+        OrderServiceImpl orderService = new OrderServiceImpl(orderProcessor, getContext().getSystem());
 
 
         CompletionStage<ServerBinding> binding = Http.get(getContext().getSystem())
                         .newServerAt("localhost",8080)
-                                .bind(OrderServiceHandlerFactory.create(orderService, getContext().getSystem()));
+                        .bind(OrderServiceHandlerFactory.create(orderService, getContext().getSystem()));
+
         getContext().getLog().info("OrderHandler started");
         binding.thenAccept(serverBinding -> {getContext().getLog().info("Server online at http://localhost:8080/");});
 
