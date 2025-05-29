@@ -45,6 +45,13 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
         }
     }
 
+    public static final class OrderUnsuccessful implements FridgeCommand {
+        private final String reason;
+        public OrderUnsuccessful(String reason){
+            this.reason = reason;
+        }
+    }
+
     public static final class QueryFridgeContent implements FridgeCommand{
         private final String huh = "";
         public QueryFridgeContent(){}
@@ -137,7 +144,6 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
 
     private Behavior<FridgeCommand> onSetAutomaticOrder(SetAutomaticOrder setAutomaticOrder){
         this.automaticOrders.put(setAutomaticOrder.productToOrder, setAutomaticOrder.amount);
-        //TODO: check immediately if item is in inventory, if not order it.
         getContext().getSelf().tell(new CheckForAutomaticOrder(setAutomaticOrder.productToOrder));
         return this;
     }
@@ -160,6 +166,12 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
         return this;
     }
 
+    private Behavior<FridgeCommand> onOrderUnsuccessful(OrderUnsuccessful failure){
+
+        getContext().getLog().error(failure.reason);
+        return this;
+    }
+
     @Override
     public Receive<FridgeCommand> createReceive() {
         return newReceiveBuilder()
@@ -170,6 +182,7 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
                 .onMessage(QueryOrderHistory.class, this::onQueryOrderHistory)
                 .onMessage(SetAutomaticOrder.class, this::onSetAutomaticOrder)
                 .onMessage(CheckForAutomaticOrder.class, this::onCheckForAutomaticOrder)
+                .onMessage(OrderUnsuccessful.class, this::onOrderUnsuccessful)
                 .build();
 
     }

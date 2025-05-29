@@ -22,7 +22,7 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
         getContext().getLog().info("SpaceSensor started");
     }
 
-    private final static class SpaceCheck{
+    public final static class SpaceCheck implements SpaceCommand{
         private ActorRef<OrderExecutor.OrderCommand> replyTo;
 
         public SpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
@@ -30,17 +30,20 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
         }
     }
 
-    private Behavior<SpaceCommand> onSpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
+    private Behavior<SpaceCommand> onSpaceCheck(SpaceCheck msg){
+        boolean hasSpace = false;
         if(occupiedSpace < maximumSpace){
-            replyTo.tell(new OrderExecutor.SpaceSensorAnswer(true));
+            hasSpace = true;
         }
-
+        msg.replyTo.tell(new OrderExecutor.SpaceSensorAnswer(hasSpace));
         return this;
     }
 
 
     @Override
     public Receive<SpaceCommand> createReceive() {
-        return null;
+        return newReceiveBuilder()
+                .onMessage(SpaceCheck.class, this::onSpaceCheck)
+                .build();
     }
 }

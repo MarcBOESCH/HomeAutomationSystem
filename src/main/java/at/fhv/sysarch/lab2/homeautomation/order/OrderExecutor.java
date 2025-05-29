@@ -38,12 +38,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
 
     public static final class Order implements OrderCommand{
-
-        public final String product;
-        private final int amount;
-        public Order(String product, int amount) {
-            this.product = product;
-            this.amount = amount;
+        public Order() {
         }
     }
 
@@ -61,6 +56,9 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
         }
     }
 
+    public static final class OrderExecution implements OrderCommand{
+        public OrderExecution(){};
+    }
 
     //Create Sachen:
     public static Behavior<OrderCommand> create(
@@ -95,32 +93,40 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
         this.productName = product;
         this.amount = amount;
         getContext().getLog().info("OrderExecutor started");
-        getContext().getSelf().tell(new Order(product, amount));
+        getContext().getSelf().tell(new Order());
     }
 
 
     ///Behaviors
 
     private Behavior<OrderCommand> onOrder(Order order){
-        getContext().getLog().info("OrderExecutor received order for {}", order.product);
-        CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(order.product)
-                        .setAmount(order.amount)
-                        .build());
+        getContext().getLog().info("OrderExecutor received order for {}", this.productName);
+        //TODO: 2. Check for WeightLimit, SpaceLimit through the ActorRefs before ordering -> trigger this from create directly
+        this.spaceSensor.tell(new SpaceSensor.SpaceCheck(getContext().getSelf()));
+
+        return this;
+    }
+
+    private Behavior<OrderCommand> onOrderExecution(OrderExecution orderExecution){
+        getContext().getLog().info("OrderExecution started for order {}", this.productName);
+        CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(this.productName)
+                .setAmount(this.amount)
+                .build());
         Logger logger = getContext().getLog();
         //request.thenAccept(reply -> getContext().getLog().info("Order processed {}", reply.getSuccessful()));
         request.whenComplete((reply, throwable) -> {
-           if(throwable != null){
-               logger.error("Error while processing order", throwable);
-           } else {
-               logger.info("Order processed: {}, {}, {}, {}", reply.getSuccessful(), reply.getAmount(), reply.getPrice(), reply.getWeight());
-            //TODO: reply to fridge so it stocks up with the correct ish
+            if(throwable != null){
+                logger.error("Error while processing order", throwable);
+                this.fridge.tell(new SmartFridge.OrderUnsuccessful(throwable.toString()));
+            } else {
+                logger.info("Order processed: {}, {}, {}, {}", reply.getSuccessful(), reply.getAmount(), reply.getPrice(), reply.getWeight());
+                //TODO: reply to fridge so it stocks up with the correct ish
+                this.fridge.tell(new SmartFridge.OrderSuccessful(reply, this.productName));
 
-           }
+            }
         });
-
-        //TODO: 2. Check for WeightLimit, SpaceLimit through the ActorRefs before ordering -> trigger this from create directly
-
-        return this;
+        //Terminate child actor (what a sentence)
+        return Behaviors.stopped();
     }
 
     //Check whether or not WeightCheck and SpaceCheck have answered. maybe return Behaviors still, so Behaviors.stopped(); can be used
