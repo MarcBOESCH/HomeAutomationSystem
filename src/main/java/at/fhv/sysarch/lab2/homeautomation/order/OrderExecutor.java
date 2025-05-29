@@ -25,7 +25,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     private final ActorRef<WeightSensor.WeightCommand> weightSensor;
     private final ActorRef<SmartFridge.FridgeCommand> fridge;
     private final ActorRef<SpaceSensor.SpaceCommand> spaceSensor;
-    private final Product product;
+    private final String productName;
 
     //Uninitialized HashMap to use as checks, whether space/weight is good or not.
     private final HashMap<String, Boolean> spaceProduct = new HashMap<>();
@@ -37,9 +37,9 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     public static final class Order implements OrderCommand{
 
-        public final Product product;
+        public final String product;
         private final int amount;
-        public Order(Product product, int amount) {
+        public Order(String product, int amount) {
             this.product = product;
             this.amount = amount;
         }
@@ -62,7 +62,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     //Create Sachen:
     public static Behavior<OrderCommand> create(
-            Product product,
+            String product,
             ActorRef<WeightSensor.WeightCommand> weightSensor,
             ActorRef<SpaceSensor.SpaceCommand> spaceSensor,
             ActorRef<SmartFridge.FridgeCommand> fridge,
@@ -80,7 +80,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     private OrderExecutor(
             ActorContext<OrderCommand> context,
             OrderServiceClient client,
-            Product product,
+            String product,
             ActorRef<WeightSensor.WeightCommand> weightSensor,
             ActorRef<SpaceSensor.SpaceCommand> spaceSensor,
             ActorRef<SmartFridge.FridgeCommand> fridge,
@@ -90,7 +90,7 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
         this.weightSensor = weightSensor;
         this.fridge = fridge;
         this.spaceSensor = spaceSensor;
-        this.product = product;
+        this.productName = product;
         this.amount = amount;
         getContext().getLog().info("OrderExecutor started");
         //TODO: Send message to self to start OrderProcess.
@@ -102,8 +102,8 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
 
     private Behavior<OrderCommand> onOrder(Order order){
         //TODO: 1. Start simple, just send a message to OrderProcessor through gRPC
-        getContext().getLog().info("OrderExecutor received order for {}", order.product.getName());
-        CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(order.product.getName())
+        getContext().getLog().info("OrderExecutor received order for {}", order.product);
+        CompletionStage<OrderReply> request = this.client.order(OrderRequest.newBuilder().setProduct(order.product)
                         .setAmount(order.amount)
                         .build());
         request.thenAccept(reply -> getContext().getLog().info("Order processed {}", reply.getSuccessful()));
@@ -116,12 +116,12 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     //Check whether or not WeightCheck and SpaceCheck have answered. maybe return Behaviors still, so Behaviors.stopped(); can be used
     private Behavior<OrderCommand> checkForSensorAnswers(){
         if(!spaceProduct.isEmpty() && !weightProduct.isEmpty()){
-            if(spaceProduct.get(product) == false){
+            if(spaceProduct.get(productName) == false){
                 getContext().getLog().info("Not enough space in fridge");
 
                 return Behaviors.stopped();
             }
-            else if(weightProduct.get(product) == false){
+            else if(weightProduct.get(productName) == false){
                 getContext().getLog().info("Too much weight in fridge");
 
                 return Behaviors.stopped();
@@ -135,13 +135,13 @@ public class OrderExecutor extends AbstractBehavior<OrderExecutor.OrderCommand> 
     }
 
     private Behavior<OrderCommand> onSpaceAnswer(SpaceSensorAnswer answer){
-        this.spaceProduct.put(product.getName(), answer.spaceAnswer);
+        this.spaceProduct.put(productName, answer.spaceAnswer);
 
         return checkForSensorAnswers();
     }
 
     private Behavior<OrderCommand> onWeightAnswer(WeightSensorAnswer answer){
-        this.weightProduct.put(product.getName(), answer.weightAnswer);
+        this.weightProduct.put(productName, answer.weightAnswer);
 
         return checkForSensorAnswers();
     }

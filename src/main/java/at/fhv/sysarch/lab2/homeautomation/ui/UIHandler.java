@@ -153,6 +153,17 @@ public class UIHandler extends AbstractBehavior<UIHandler.UICommand> {
 
             //Fridge Commands
             //TODO: Implement the UI commands for Fridge
+            case "sf":
+                if(command.length >= 2){
+                    String commandString = command[1].toLowerCase();
+                    switch (commandString){
+                        case "order":
+                            if(command.length >= 4){
+                                fridge.tell(new SmartFridge.FridgeOrder(command[3].toLowerCase(), Integer.parseInt(command[4])));
+                            }
+                    }
+
+                } //TODO: order with amount
 
 
             // Switch weather simulation

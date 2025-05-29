@@ -32,7 +32,7 @@ public class SpaceSensor extends AbstractBehavior<SpaceSensor.SpaceCommand> {
 
     private Behavior<SpaceCommand> onSpaceCheck(ActorRef<OrderExecutor.OrderCommand> replyTo){
         if(occupiedSpace < maximumSpace){
-            replyTo.tell();
+            replyTo.tell(new OrderExecutor.SpaceSensorAnswer(true));
         }
 
         return this;

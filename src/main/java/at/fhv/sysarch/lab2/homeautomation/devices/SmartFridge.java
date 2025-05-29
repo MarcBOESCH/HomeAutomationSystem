@@ -19,9 +19,9 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
     /// Messages:
 
     public static final class FridgeOrder implements FridgeCommand {
-        private final Product product;
+        private final String product;
         private final int amount;
-        public FridgeOrder(Product product, int amount) {
+        public FridgeOrder(String product, int amount) {
             this.product = product;
             this.amount = amount;
         }
@@ -44,7 +44,7 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
                 spaceSensor,
                 getContext().getSelf(),
                 message.amount),
-                "OrderExecutor" + message.product.getName());
+                "OrderExecutor" + message.product);
 
         return this;
     }
