@@ -100,6 +100,7 @@ public class OrderProcessor extends AbstractBehavior<OrderProcessor.ProcessOrder
         if(weight == -1f){
             weight = ThreadLocalRandom.current().nextFloat(minimum, maximum);
             productList.put(msg.productName.toLowerCase(), weight);
+            priceList.put(msg.productName.toLowerCase(), ThreadLocalRandom.current().nextFloat(minimum, maximum-2.0f));
         }
         ProductWeightReply result = ProductWeightReply.newBuilder()
                         .setSuccessful(true)

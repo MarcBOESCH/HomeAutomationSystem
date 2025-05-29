@@ -53,7 +53,6 @@ public class SmartFridge extends AbstractBehavior<SmartFridge.FridgeCommand> {
     }
 
     public static final class QueryFridgeContent implements FridgeCommand{
-        private final String huh = "";
         public QueryFridgeContent(){}
     }
 
