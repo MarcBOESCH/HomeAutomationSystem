@@ -48,6 +48,15 @@ processResources {
     exclude '**/*.proto'
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'at.fhv.sysarch.lab2.HomeAutomationSystem'
+        )
+    }
+}
+
+
 application {
     mainClass = 'at.fhv.sysarch.lab2.HomeAutomationSystem'
 }

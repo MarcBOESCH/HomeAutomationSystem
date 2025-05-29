@@ -25,6 +25,32 @@ oder (bei generischem Namen)
 
 - java -jar build/libs/*.jar
 
+## Docker-Betrieb
+
+### Voraussetzungen für Docker
+- Docker und Docker Compose installiert
+- Für die GUI: X-Server unter Windows (z.B. VcXsrv oder Xming)
+
+### Mit Docker starten
+1. X-Server starten (nur für Windows):
+   - VcXsrv oder Xming starten
+   - "Disable access control" aktivieren
+
+2. Container bauen und starten:
+   ```
+   docker-compose up --build
+   ```
+
+3. Zum Beenden:
+   ```
+   docker-compose down
+   ```
+
+### Hinweise zum Docker-Betrieb
+- Die Anwendung läuft in einem Container mit GUI-Unterstützung
+- Eingaben können direkt im Terminal erfolgen, in dem docker-compose ausgeführt wurde
+- Bei Problemen mit der GUI-Anzeige, bitte die X-Server-Einstellungen überprüfen
+
 ### UI öffnen
 Nach dem Start öffnet sich automatisch die Swing-Benutzeroberfläche.
 
@@ -41,6 +67,13 @@ Die Anwendung reagiert auf vordefinierte Befehle, die du direkt im Terminal eing
 - ms on|off|play|stop: Steuert die MediaStation (Einschalten / Ausschalten / Abspielen / Stoppen) (z.B. ms play).
 
 - sim mqtt|internal: Wechselt zwischen externer (MQTT) und interner Wetter-/Temperatur-Simulation (z.B. sim mqtt).
+
+- sf order <productname> <?zahlenwert> /auto <productname> <?zahlenwert>/eat/look/history:   
+   order: Bestellen eines Produktes. (optional mit Zahlenwert, damit mehr bestellt werden)      
+   auto: Automatisches bestellen eines Produktes falls es leer ist (optional mit Zahlenwert, damit mehr bestellt werden können)   
+   eat: Konsumieren eines Produktes, dass sich im Kühlschrank befindet.   
+   look: Auflistung der Produkte im Kühlschrank.   
+   history: Auflistung der gesamten Bestellhistorie.   
 
 - quit: Beendet die Anwendung.
 
